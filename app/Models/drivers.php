@@ -8,11 +8,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
-
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-
-class doos_users extends Authenticatable implements JWTSubject
+class drivers extends Authenticatable implements JWTSubject
 {
     use HasFactory, Notifiable, SoftDeletes;
 
@@ -27,20 +25,18 @@ class doos_users extends Authenticatable implements JWTSubject
         return [];
     }
 
-
     protected $fillable = [
         'name',
         'email',
+        'password',
+        'address',
         'phone',
         'img',
-        'role',
         'status',
-        'otp',
-        'password',
     ];
 
-
     protected $hidden = [
+        'otp',
         'password',
         'remember_token',
     ];
@@ -55,9 +51,10 @@ class doos_users extends Authenticatable implements JWTSubject
     }
 
 
-
-    public function roleUser()
+    public function cars()
     {
-        return $this->hasOne(user_role::class, 'user_id', 'id');
+        return $this->hasMany(cars::class, 'car_owner_id', 'id');
     }
+
+
 }

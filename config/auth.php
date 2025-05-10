@@ -54,6 +54,10 @@ return [
             'driver' => 'jwt',
             'provider' => 'car_renters',
         ],
+        'drivers' => [
+            'driver' => 'jwt',
+            'provider' => 'drivers',
+        ],
 
     ],
 
@@ -94,6 +98,10 @@ return [
         'car_renters' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', App\Models\car_renter::class),
+        ],
+        'drivers' => [
+            'driver' => 'eloquent',
+            'model' => env('AUTH_MODEL', App\Models\drivers::class),
         ],
 
         // 'users' => [

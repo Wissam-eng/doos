@@ -14,6 +14,7 @@ class cars extends Model
         'car_owner_id',
         'categories_cars_id',
         'car_location',
+        'driver_id',
         'car_vin',
         'car_model',
         'car_mileage_range',
@@ -26,6 +27,7 @@ class cars extends Model
         'features',
         'description',
         'license_plate_number',
+        'status',
         'state'
     ];
 
@@ -33,4 +35,16 @@ class cars extends Model
     {
         return $this->hasMany(cars_imgs::class, 'car_id', 'id');
     }
+
+    public function driver()
+    {
+        return $this->belongsTo(drivers::class, 'driver_id', 'id');
+    }
+
+
+    public function carOwner()
+    {
+        return $this->hasOne(car_owner::class, 'id', 'car_owner_id');
+    }
+
 }

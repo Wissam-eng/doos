@@ -23,7 +23,11 @@ return new class extends Migration
             $table->unsignedBigInteger('categories_cars_id')->nullable();
             $table->foreign('categories_cars_id')->references('id')->on('categories_cars')->onDelete('cascade');
 
-            $table->enum('status', ['active', 'pending', 'inactive' , 'incomplete' , 'blocked'])->default('inactive');
+            $table->enum('status', ['active', 'pending', 'inactive', 'incomplete', 'blocked'])->default('inactive');
+
+            // driver id
+            $table->unsignedBigInteger('driver_id')->nullable();
+            $table->foreign('driver_id')->references('id')->on('drivers')->onDelete('cascade');
 
 
             // car info
@@ -32,6 +36,7 @@ return new class extends Migration
             $table->string('car_model');
             $table->string('car_mileage_range'); // 50_100000
             $table->enum('mechanical_condition', ['Excellent', 'Good', 'Fair', 'Not_work']);
+            $table->enum('transmission', ['manual', 'auto']);
             $table->enum('all_seats_seatable', ['yes', 'no']);
             $table->text('additional_info')->nullable();
             $table->string('number_of_door');

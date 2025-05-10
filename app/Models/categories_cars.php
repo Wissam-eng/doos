@@ -25,4 +25,11 @@ class categories_cars extends Model
         'description',
 
     ];
+
+
+    public function car()
+    {
+
+        return $this->hasMany(cars::class, 'categories_cars_id', 'id');
+    }
 }

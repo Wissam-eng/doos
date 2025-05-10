@@ -3,16 +3,30 @@
 namespace App\Http\Controllers;
 
 use App\Models\doos_users;
+use App\Models\Permissions;
 use Illuminate\Http\Request;
 
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
+
+use App\Traits\HasPermissionCheck;
+
+
+
 
 class DoosUsersController extends Controller
 {
 
+    use HasPermissionCheck;
+
     public function index()
     {
+
+        if ($response = $this->checkPermission('users_mangement', 'view')) {
+            return $response;
+        }
+
         $doos_userss = doos_users::all();
         return response()->json([
             'doos_userss' => $doos_userss
@@ -22,6 +36,12 @@ class DoosUsersController extends Controller
 
     public function store(Request $request)
     {
+
+        if ($response = $this->checkPermission('users_mangement', 'add')) {
+            return $response;
+        }
+
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|max:255',
             'email' => 'required|unique:doos_users,email',
@@ -47,6 +67,13 @@ class DoosUsersController extends Controller
 
     public function update(Request $request, $id)
     {
+
+
+        if ($response = $this->checkPermission('users_mangement', 'edit')) {
+            return $response;
+        }
+
+
         $doos_users = doos_users::find($id);
 
         if (!$doos_users) {
@@ -83,6 +110,11 @@ class DoosUsersController extends Controller
 
     public function destroy($id)
     {
+
+        if ($response = $this->checkPermission('users_mangement', 'delete')) {
+            return $response;
+        }
+
         $doos_users = doos_users::find($id);
 
         if (!$doos_users) {

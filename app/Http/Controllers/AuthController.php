@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Models\car_owner;
 use App\Models\car_renter;
 use App\Models\doos_users;
+use App\Models\user_log;
 
 
 use App\Mail\OTPMail;
@@ -24,56 +25,61 @@ class AuthController extends Controller
 {
     public function login(Request $request)
     {
-        $credentials = $request->only('email', 'password');
 
 
-        if ($token = Auth::guard('doos_users')->attempt($credentials)) {
+        $data = $request->only('email', 'password', 'user_type');
 
-            $user = Auth::guard('doos_users')->user();
+        $validator = Validator::make($data, [
+            'email' => 'required|email',
+            'password' => 'required',
+            'user_type' => 'required|in:car_owner,car_renter,doos_user,drivers',
+        ]);
 
-
-            if ($user) {
-                return response()->json([
-                    'token' => $token,
-                    'user' => $user,
-                ]);
-            }
-        } elseif ($token = Auth::guard('car_owners')->attempt($credentials)) {
-
-            $user = Auth::guard('car_owners')->user();
-
-            if ($user->email_verified_at == null) {
-                return response()->json(['error' => 'Please verify your email'], 401);
-            }
-
-            if ($user) {
-                return response()->json([
-                    'token' => $token,
-                    'user' => $user,
-                ]);
-            }
-        } elseif ($token = Auth::guard('car_renters')->attempt($credentials)) {
-
-            $user = Auth::guard('car_renters')->user();
-
-
-            if ($user->email_verified_at == null) {
-                return response()->json(['error' => 'Please verify your email'], 401);
-            }
-
-
-            if ($user) {
-                return response()->json([
-                    'token' => $token,
-                    'user' => $user,
-                ]);
-            }
-        } else {
-            return response()->json(['error' => 'Unauthorized'], 401);
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        return $this->respondWithToken($token);
+        $guards = [
+            'doos_user' => 'doos_users',
+            'car_owner' => 'car_owners',
+            'car_renter' => 'car_renters',
+            'drivers' => 'drivers',
+        ];
+
+        $guard = $guards[$data['user_type']] ?? null;
+
+        if (!$guard) {
+            return response()->json(['error' => 'Invalid user type'], 400);
+        }
+
+        if ($token = Auth::guard($guard)->attempt(['email' => $data['email'], 'password' => $data['password']])) {
+            $user = Auth::guard($guard)->user();
+
+            // تحقق من التفعيل فقط لملاك ومؤجري السيارات
+            if (in_array($guard, ['car_owners', 'car_renters', 'drivers']) && is_null($user->email_verified_at)) {
+                return response()->json(['error' => 'Please verify your email'], 401);
+            }
+
+
+
+
+
+            if ($guard === 'doos_users') {
+                $log = user_log::create([
+                    'user_id' => $user->id,
+                    'action' => 'login',
+                ]);
+            }
+
+            return response()->json([
+                'token' => $token,
+                'user' => $user,
+            ]);
+        }
+
+        return response()->json(['error' => 'Unauthorized'], 401);
     }
+
 
     protected function respondWithToken($token)
     {
@@ -91,6 +97,19 @@ class AuthController extends Controller
 
     public function logout()
     {
+
+        $user = Auth::guard('doos_users')->user();
+
+
+
+
+        if ($user) {
+            $log = user_log::create([
+                'user_id' => $user->id,
+                'action' => 'logout',
+            ]);
+        }
+
         JWTAuth::invalidate(JWTAuth::getToken());
         return response()->json(['message' => 'Successfully logged out']);
     }

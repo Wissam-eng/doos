@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\car_owner;
+use App\Models\orders_cars;
 use App\Models\cars;
 use Illuminate\Http\Request;
 
@@ -16,13 +17,23 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
 
+use App\Traits\HasPermissionCheck;
+
 class CarOwnerController extends Controller
 {
 
 
+    use HasPermissionCheck;
 
     public function index()
     {
+
+        if (in_array(Auth::user()->role, ['owner', 'manager', 'support'])) {
+            if ($response = $this->checkPermission('car_owners', 'view')) {
+                return $response;
+            }
+        }
+
         $car_owners = car_owner::with('cars', 'cars.imgs')->get();
         return response()->json([
             'car_owners' => $car_owners
@@ -38,7 +49,7 @@ class CarOwnerController extends Controller
             $user = car_owner::where('email', $request->email)->first();
 
 
-            if ($user->email_verified_at == null) {
+            if ($user && $user->email_verified_at == null) {
                 $user->forcedelete();
             }
 
@@ -160,6 +171,15 @@ class CarOwnerController extends Controller
 
     public function update(Request $request, $id)
     {
+
+        if (in_array(Auth::user()->role, ['owner', 'manager', 'support'])) {
+            if ($response = $this->checkPermission('car_owners', 'edit')) {
+                return $response;
+            }
+        }
+
+
+
         $carOwner = car_owner::find($id);
 
         if (!$carOwner) {
@@ -215,6 +235,13 @@ class CarOwnerController extends Controller
 
     public function destroy($id)
     {
+
+        if (in_array(Auth::user()->role, ['owner', 'manager', 'support'])) {
+            if ($response = $this->checkPermission('car_owners', 'delete')) {
+                return $response;
+            }
+        }
+
         $car_owner = car_owner::find($id);
 
         if (!$car_owner) {

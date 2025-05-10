@@ -10,12 +10,24 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
+use App\Traits\HasPermissionCheck;
+
 
 class CarsController extends Controller
 {
 
+    use HasPermissionCheck;
+
+
     public function index()
     {
+
+        if (in_array(Auth::user()->role, ['owner', 'manager', 'support'])) {
+            if ($response = $this->checkPermission('car_owners', 'view')) {
+                return $response;
+            }
+        }
+
         $cars = cars::all();
 
         return response()->json([
@@ -25,11 +37,30 @@ class CarsController extends Controller
     }
 
 
+
+    public function get_cars_by_category($id)
+    {
+        if (in_array(Auth::user()->role, ['owner', 'manager', 'support'])) {
+            if ($response = $this->checkPermission('car_owners', 'view')) {
+                return $response;
+            }
+        }
+
+        $cars = cars::where('categories_cars_id', $id)->get();
+        return response()->json([
+            'status' => 'success',
+            'cars' => $cars
+        ]);
+    }
+
+
+
+
     public function get_my_car($status)
     {
 
         $user  = Auth::user()->id;
-        
+
         $cars = cars::where(['status' => $status, 'car_owner_id' =>  $user])->get();
 
         return response()->json([
@@ -38,8 +69,44 @@ class CarsController extends Controller
         ]);
     }
 
+
+    public function get_car_detail($id)
+    {
+
+        if (in_array(Auth::user()->role, ['owner', 'manager', 'support'])) {
+            if ($response = $this->checkPermission('car_owners', 'view')) {
+                return $response;
+            }
+        }
+
+
+        $car_detail = cars::with('imgs', 'driver', 'carOwner')->find($id);
+
+        if (!$car_detail) {
+
+            return response()->json([
+                'status' => 'false',
+                'message' => 'the car not found'
+            ]);
+        }
+        return response()->json([
+            'status' => 'success',
+            'car_detail' => $car_detail
+        ]);
+    }
+
     public function store(Request $request)
     {
+
+
+
+        if (in_array(Auth::user()->role, ['owner', 'manager', 'support'])) {
+            if ($response = $this->checkPermission('car_owners', 'add')) {
+                return $response;
+            }
+        }
+
+
         try {
 
             $request['car_owner_id'] = Auth::user()->id;
@@ -74,6 +141,10 @@ class CarsController extends Controller
                     'status' => 'error',
                     'errors' => $validator->errors()
                 ]);
+            }
+
+            if (is_array($request->features ?? null)) {
+                $request['features'] = json_encode($request->features);
             }
 
             $car = cars::create($request->all());
@@ -111,6 +182,14 @@ class CarsController extends Controller
 
     public function update(Request $request, $id)
     {
+
+        if (in_array(Auth::user()->role, ['owner', 'manager', 'support'])) {
+            if ($response = $this->checkPermission('car_owners', 'edit')) {
+                return $response;
+            }
+        }
+
+
         $car = cars::find($id);
 
         if (!$car) {
@@ -195,6 +274,14 @@ class CarsController extends Controller
 
     public function destroy($id)
     {
+
+
+        if (in_array(Auth::user()->role, ['owner', 'manager', 'support'])) {
+            if ($response = $this->checkPermission('car_owners', 'delete')) {
+                return $response;
+            }
+        }
+
         $car = cars::with('imgs')->find($id);
 
         if (!$car) {

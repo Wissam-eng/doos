@@ -7,18 +7,28 @@ use Illuminate\Http\Request;
 
 use Illuminate\Support\Facades\Auth;
 
-
 use Illuminate\Support\Facades\Validator;
 
 use Illuminate\Validation\Rule;
+
+use Illuminate\Routing\Controller;
+
+use App\Traits\HasPermissionCheck;
 
 
 class MembershipController extends Controller
 {
 
+    use HasPermissionCheck;
 
     public function index()
     {
+
+        if ($response = $this->checkPermission('membership', 'view')) {
+            return $response;
+        }
+
+
         $membership = Membership::where('status', 'active')->get();
 
         return response()->json([
@@ -31,6 +41,10 @@ class MembershipController extends Controller
 
     public function store(Request $request)
     {
+
+        if ($response = $this->checkPermission('membership', 'add')) {
+            return $response;
+        }
 
         $request['user_id'] = Auth::user()->id;
 
@@ -57,6 +71,14 @@ class MembershipController extends Controller
 
     public function update(Request $request, $id)
     {
+
+
+
+        if ($response = $this->checkPermission('membership', 'edit')) {
+            return $response;
+        }
+
+
         $membership = Membership::find($id);
 
         if (!$membership) {
@@ -92,6 +114,12 @@ class MembershipController extends Controller
 
     public function destroy($id)
     {
+
+        if ($response = $this->checkPermission('membership', 'delete')) {
+            return $response;
+        }
+
+
         $membership = Membership::find($id);
 
         if (!$membership) {

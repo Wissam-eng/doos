@@ -7,6 +7,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
 
+use Illuminate\Support\Facades\Mail;
+use App\Mail\OTPMail;
+// use Illuminate\Container\Attributes\Auth;
+
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+
 class CarRenterController extends Controller
 {
     /**
@@ -29,7 +36,7 @@ class CarRenterController extends Controller
             'password' => 'required',
             'phone' => 'required|unique:car_renters,phone',
             'role' => 'required|in:normal,vip',
-            'status' => 'required|in:active,inactive',
+            'status' => 'sometimes|in:active,inactive',
         ]);
 
         if ($validator->fails()) {
@@ -38,7 +45,12 @@ class CarRenterController extends Controller
 
         $request['password'] = hash::make($request->password);
 
+        $request['otp'] = rand(100000, 999999);
+
         $car_renter = car_renter::create($request->all());
+
+        $otp = $car_renter->otp;
+        Mail::to($request->email)->send(new OTPMail($otp, 'test'));
 
         return response()->json([
             'message' => 'car renter created successfully',
@@ -47,19 +59,22 @@ class CarRenterController extends Controller
     }
 
 
-    public function update(Request $request, $id)
+    public function update(Request $request)
     {
-        $car_renter = car_renter::find($id);
+
+        // dd($request->all());
+        $user = Auth::user()->id;
+        $car_renter = car_renter::find($user);
 
         if (!$car_renter) {
-            return response()->json(['message' => 'car renter not found'], 404);
+            return response()->json(['message' => 'order renter not found'], 404);
         }
 
 
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|max:255',
             'email' => 'sometimes|email|unique:car_renters,email,' . $car_renter->id,
-            'password' => 'sometimes',
+            'password' => 'sometimes|string|confirmed',
             'phone' => 'sometimes|unique:car_renters,phone,' . $car_renter->id,
             'role' => 'sometimes|in:Individuals,Companies',
             'status' => 'sometimes|in:active,inactive',
